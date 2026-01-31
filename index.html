@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Odonata – Danse et Art Numérique – Genève</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Rajdhani:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+  :root {
+    --bg: #0a0a0a;
+    --bg-mid: #141414;
+    --bg-card: #1a1a1a;
+    --text: #d4ccc4;
+    --text-dim: #7a756f;
+    --accent: #c49a6c;
+    --accent-dim: #8a6d4a;
+    --accent-glow: rgba(196,154,108,0.15);
+    --border: #2a2520;
+  }
+
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Rajdhani', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    font-size: 16px;
+    line-height: 1.6;
+  }
+
+  /* ─── GRAIN OVERLAY ─── */
+  body::after {
+    content:'';
+    position:fixed; inset:0;
+    pointer-events:none;
+    z-index:999;
+    opacity:.035;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* ─── NAVIGATION ─── */
+  nav {
+    position: fixed; top:0; left:0; right:0; z-index:100;
+    padding: 0 40px;
+    height: 70px;
+    display: flex; align-items: center; justify-content: space-between;
+    background: linear-gradient(to bottom, rgba(10,10,10,0.95) 0%, transparent 100%);
+    transition: background .3s;
+  }
+  nav.scrolled { background: rgba(10,10,10,0.92); backdrop-filter: blur(8px); }
+
+  .nav-logo {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 24px; font-weight: 300; letter-spacing: 6px;
+    color: var(--accent); text-transform: uppercase;
+    text-decoration: none; cursor: pointer;
+  }
+
+  .nav-links { display:flex; gap:32px; align-items:center; }
+  .nav-links a {
+    color: var(--text-dim);
+    text-decoration: none;
+    font-size: 11px; letter-spacing: 3px; text-transform: uppercase;
+    font-weight: 500;
+    padding: 6px 0; position:relative;
+    transition: color .3s;
+  }
+  .nav-links a::after {
+    content:''; position:absolute; bottom:0; left:0; width:0; height:1px;
+    background: var(--accent); transition: width .3s;
+  }
+  .nav-links a:hover { color: var(--accent); }
+  .nav-links a:hover::after { width:100%; }
+  .nav-links a.active { color: var(--accent); }
+  .nav-links a.active::after { width:100%; }
+
+  /* Dropdown */
+  .nav-item { position:relative; }
+  .nav-dropdown {
+    display:none; position:absolute; top:100%; left:-20px;
+    background: rgba(20,20,20,0.97); border:1px solid var(--border);
+    min-width: 200px; padding: 12px 0; margin-top:12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,.5);
+  }
+  .nav-item:hover .nav-dropdown { display:block; }
+  .nav-dropdown a {
+    display:block; padding: 8px 24px;
+    font-size: 10px; letter-spacing: 2.5px;
+  }
+  .nav-dropdown a::after { display:none; }
+  .nav-dropdown a:hover { background: var(--accent-glow); }
+
+  /* Mobile nav toggle */
+  .nav-toggle { display:none; flex-direction:column; gap:5px; cursor:pointer; padding:8px; }
+  .nav-toggle span { width:24px; height:1px; background: var(--accent); transition: .3s; }
+
+  /* ─── PAGES (single-page routing) ─── */
+  .page { display:none; min-height:100vh; padding-top:70px; }
+  .page.active { display:block; }
+
+  /* ─── HOME ─── */
+  #page-home {
+    display:none;
+    min-height:100vh;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    text-align:center;
+    position:relative;
+    background:
+      radial-gradient(ellipse 80% 60% at 30% 70%, rgba(196,154,108,0.06) 0%, transparent 70%),
+      radial-gradient(ellipse 60% 40% at 75% 30%, rgba(196,154,108,0.04) 0%, transparent 70%),
+      var(--bg);
+  }
+  #page-home.active { display:flex; }
+
+  .home-content { position:relative; z-index:2; }
+  .home-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(52px, 10vw, 110px);
+    font-weight: 300;
+    letter-spacing: 18px;
+    color: var(--text);
+    text-transform: uppercase;
+    line-height: 1.1;
+    margin-bottom: 16px;
+    opacity:0; animation: fadeUp .8s .2s forwards;
+  }
+  .home-subtitle {
+    font-size: 11px; letter-spacing: 5px; text-transform: uppercase;
+    color: var(--accent); font-weight: 400;
+    margin-bottom: 60px;
+    opacity:0; animation: fadeUp .8s .4s forwards;
+  }
+  .home-divider {
+    width: 1px; height: 60px; background: var(--accent); margin: 0 auto 50px;
+    opacity:0; animation: fadeUp .8s .5s forwards;
+  }
+
+  .home-cards {
+    display:flex; gap:40px; justify-content:center; flex-wrap:wrap;
+    opacity:0; animation: fadeUp .8s .7s forwards;
+  }
+  .home-card {
+    width: 220px; padding: 36px 28px;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    text-decoration:none; color: var(--text);
+    transition: border-color .4s, transform .3s, box-shadow .4s;
+    cursor: pointer;
+    position: relative; overflow:hidden;
+  }
+  .home-card::before {
+    content:''; position:absolute; inset:0;
+    background: linear-gradient(135deg, var(--accent-glow), transparent);
+    opacity:0; transition: opacity .4s;
+  }
+  .home-card:hover { border-color: var(--accent-dim); transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,0,0,.4); }
+  .home-card:hover::before { opacity:1; }
+  .home-card-icon {
+    font-size: 28px; margin-bottom:16px; color: var(--accent);
+  }
+  .home-card h3 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px; font-weight: 400; letter-spacing: 3px;
+    text-transform: uppercase; margin-bottom:8px;
+    position:relative;
+  }
+  .home-card p {
+    font-size: 11px; color: var(--text-dim); letter-spacing: 1px;
+    position:relative;
+  }
+
+  .home-social {
+    margin-top: 70px; display:flex; gap:28px; justify-content:center;
+    opacity:0; animation: fadeUp .8s .9s forwards;
+  }
+  .home-social a {
+    color: var(--text-dim); text-decoration:none; font-size:11px;
+    letter-spacing: 2px; text-transform:uppercase;
+    transition: color .3s; border-bottom: 1px solid transparent;
+    padding-bottom:2px;
+  }
+  .home-social a:hover { color: var(--accent); border-color: var(--accent); }
+
+  .home-location {
+    position:absolute; bottom:40px; left:50%; transform:translateX(-50%);
+    font-size:10px; letter-spacing:3px; color: var(--text-dim); text-transform:uppercase;
+  }
+
+  @keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+
+  /* ─── GENERIC PAGE LAYOUT ─── */
+  .page-hero {
+    height: 220px;
+    display:flex; align-items:flex-end;
+    padding: 0 60px 48px;
+    position:relative;
+    background: linear-gradient(to bottom, rgba(10,10,10,0), var(--bg));
+  }
+  .page-hero h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 48px; font-weight: 300; letter-spacing: 10px;
+    text-transform: uppercase; color: var(--text);
+  }
+  .page-hero .page-hero-line {
+    position:absolute; bottom:48px; left:60px;
+    width:60px; height:1px; background: var(--accent);
+  }
+
+  .page-body { padding: 0 60px 100px; max-width: 1100px; margin: 0 auto; }
+
+  /* ─── BIO PAGE ─── */
+  .bio-intro {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 20px; font-weight: 300; line-height:1.8;
+    color: var(--text); margin-bottom: 50px;
+    border-left: 1px solid var(--accent);
+    padding-left: 28px;
+  }
+  .bio-section { margin-bottom: 44px; }
+  .bio-section h3 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px; font-weight: 400; letter-spacing: 4px;
+    text-transform: uppercase; color: var(--accent);
+    margin-bottom: 14px; padding-bottom:8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .bio-section p, .bio-section li {
+    font-size: 14px; color: var(--text-dim); line-height:1.9;
+  }
+  .bio-section ul { list-style:none; padding:0; }
+  .bio-section ul li { padding: 3px 0; }
+  .bio-section ul li::before { content:'—'; color: var(--accent); margin-right:10px; }
+  .bio-section a { color: var(--accent-dim); text-decoration:none; border-bottom:1px solid var(--border); transition: border-color .3s; }
+  .bio-section a:hover { border-color: var(--accent); }
+
+  /* ─── COURS PAGE ─── */
+  .cours-grid { display:grid; grid-template-columns:1fr 1fr; gap:32px; margin-bottom:48px; }
+  .cours-card {
+    background: var(--bg-card); border:1px solid var(--border);
+    padding:36px; transition: border-color .3s;
+  }
+  .cours-card:hover { border-color: var(--accent-dim); }
+  .cours-card .cours-day {
+    font-size:11px; letter-spacing:3px; color: var(--accent); text-transform:uppercase; margin-bottom:6px;
+  }
+  .cours-card .cours-time {
+    font-family:'Cormorant Garamond',serif; font-size:32px; font-weight:300;
+    color: var(--text); margin-bottom:8px;
+  }
+  .cours-card .cours-level {
+    font-size:12px; letter-spacing:2px; text-transform:uppercase;
+    color: var(--text); margin-bottom:12px; font-weight:500;
+  }
+  .cours-card p { font-size:13px; color: var(--text-dim); line-height:1.7; }
+
+  .cours-info { margin-bottom:48px; }
+  .cours-info h3 {
+    font-family:'Cormorant Garamond',serif; font-size:18px; font-weight:400;
+    letter-spacing:3px; text-transform:uppercase; color: var(--accent);
+    margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid var(--border);
+  }
+  .cours-info p { font-size:14px; color: var(--text-dim); line-height:1.9; margin-bottom:6px; }
+
+  .prix-grid { display:flex; gap:24px; flex-wrap:wrap; margin-top:16px; }
+  .prix-item {
+    background: var(--bg-card); border:1px solid var(--border);
+    padding:20px 28px; flex:1; min-width:180px; text-align:center;
+  }
+  .prix-item .prix-val {
+    font-family:'Cormorant Garamond',serif; font-size:28px; color: var(--accent); font-weight:300;
+  }
+  .prix-item .prix-label { font-size:11px; color: var(--text-dim); letter-spacing:2px; text-transform:uppercase; margin-top:4px; }
+
+  .lieu-box {
+    border:1px solid var(--border); padding:28px 32px; margin-top:32px;
+    display:flex; gap:40px; align-items:flex-start; flex-wrap:wrap;
+  }
+  .lieu-box .lieu-info h4 {
+    font-family:'Cormorant Garamond',serif; font-size:20px; color: var(--text); margin-bottom:8px;
+  }
+  .lieu-box .lieu-info p { font-size:13px; color: var(--text-dim); line-height:1.7; }
+  .lieu-box .lieu-info a { color: var(--accent-dim); text-decoration:none; }
+
+  /* ─── NEWS PAGE ─── */
+  .news-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(280px,1fr)); gap:28px; }
+  .news-card {
+    background: var(--bg-card); border:1px solid var(--border);
+    overflow:hidden; transition: border-color .4s, transform .3s;
+    cursor:pointer;
+  }
+  .news-card:hover { border-color: var(--accent-dim); transform: translateY(-3px); }
+  .news-card-img {
+    width:100%; height:180px; background: var(--bg-mid);
+    display:flex; align-items:center; justify-content:center;
+    overflow:hidden; position:relative;
+  }
+  .news-card-img .placeholder-icon { font-size:32px; color: var(--border); }
+  .news-card-body { padding:20px 22px; }
+  .news-card-date { font-size:10px; letter-spacing:2px; color: var(--accent); text-transform:uppercase; margin-bottom:8px; }
+  .news-card-title { font-family:'Cormorant Garamond',serif; font-size:18px; font-weight:400; color: var(--text); margin-bottom:6px; }
+  .news-card-desc { font-size:12px; color: var(--text-dim); line-height:1.6; }
+
+  /* ─── DESIGN PAGE ─── */
+  .design-intro {
+    font-size:15px; color: var(--text-dim); line-height:1.9;
+    max-width:680px; margin-bottom:52px;
+  }
+  .design-portfolio {
+    display:grid; grid-template-columns:repeat(auto-fill, minmax(260px,1fr)); gap:24px; margin-bottom:60px;
+  }
+  .design-item {
+    background: var(--bg-card); border:1px solid var(--border);
+    overflow:hidden; transition: border-color .3s;
+  }
+  .design-item:hover { border-color: var(--accent-dim); }
+  .design-item-img {
+    width:100%; height:200px; background: var(--bg-mid);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .design-item-img .placeholder-icon { font-size:28px; color: var(--border); }
+  .design-item-caption {
+    padding:16px 20px;
+    font-size:12px; color: var(--text-dim); letter-spacing:0.5px;
+  }
+
+  .design-services { display:grid; grid-template-columns: repeat(auto-fill, minmax(240px,1fr)); gap:24px; }
+  .service-card {
+    background: var(--bg-card); border:1px solid var(--border);
+    padding:32px 28px; transition: border-color .3s;
+  }
+  .service-card:hover { border-color: var(--accent-dim); }
+  .service-card h4 {
+    font-family:'Cormorant Garamond',serif; font-size:20px; font-weight:400;
+    color: var(--accent); margin-bottom:10px; letter-spacing:1px;
+  }
+  .service-card p { font-size:13px; color: var(--text-dim); line-height:1.7; }
+
+  /* ─── CONTACT PAGE ─── */
+  #page-contact { text-align:center; }
+  .contact-content {
+    max-width:520px; margin:0 auto; padding-top:40px;
+  }
+  .contact-content .contact-label {
+    font-size:10px; letter-spacing:3px; color: var(--text-dim); text-transform:uppercase; margin-bottom:8px;
+  }
+  .contact-content .contact-value {
+    font-family:'Cormorant Garamond',serif; font-size:22px; color: var(--text);
+    margin-bottom:32px;
+  }
+  .contact-content .contact-value a { color: var(--accent); text-decoration:none; transition: opacity .3s; }
+  .contact-content .contact-value a:hover { opacity:.7; }
+  .contact-divider { width:40px; height:1px; background: var(--border); margin:0 auto 32px; }
+  .contact-social { display:flex; gap:24px; justify-content:center; margin-top:48px; }
+  .contact-social a {
+    color: var(--text-dim); text-decoration:none; font-size:11px;
+    letter-spacing:2px; text-transform:uppercase;
+    padding:10px 18px; border:1px solid var(--border);
+    transition: border-color .3s, color .3s;
+  }
+  .contact-social a:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ─── VIDEO PLACEHOLDER ─── */
+  .video-placeholder {
+    background: var(--bg-card); border: 1px solid var(--border);
+    padding: 60px; text-align:center; margin-bottom:24px;
+  }
+  .video-placeholder p { font-size:13px; color: var(--text-dim); }
+  .video-placeholder a { color: var(--accent); text-decoration:none; }
+
+  /* ─── PHOTO PLACEHOLDER ─── */
+  .photo-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(200px,1fr)); gap:16px; }
+  .photo-placeholder-box {
+    aspect-ratio:1; background: var(--bg-card); border:1px solid var(--border);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .photo-placeholder-box span { font-size:28px; color: var(--border); }
+
+  /* ─── FOOTER ─── */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 40px 60px; text-align:center;
+  }
+  footer p { font-size:11px; color: var(--text-dim); letter-spacing:1px; }
+  footer .footer-logo {
+    font-family:'Cormorant Garamond',serif; font-size:18px;
+    letter-spacing:6px; color: var(--accent); text-transform:uppercase;
+    margin-bottom:12px;
+  }
+
+  /* ─── RESPONSIVE ─── */
+  @media(max-width:768px) {
+    nav { padding:0 24px; }
+    .nav-links { display:none; flex-direction:column; position:fixed; inset:0; top:70px;
+      background: rgba(10,10,10,0.97); padding:40px 32px; gap:20px; align-items:flex-start; z-index:99; }
+    .nav-links.open { display:flex; }
+    .nav-item .nav-dropdown { position:static; background:transparent; border:none; box-shadow:none; padding:4px 0 4px 20px; }
+    .nav-toggle { display:flex; }
+
+    .home-title { letter-spacing:8px; }
+    .home-cards { flex-direction:column; align-items:center; }
+
+    .page-hero { padding:0 24px 36px; height:180px; }
+    .page-hero h1 { font-size:32px; letter-spacing:6px; }
+    .page-hero .page-hero-line { left:24px; }
+    .page-body { padding:0 24px 80px; }
+
+    .cours-grid { grid-template-columns:1fr; }
+    footer { padding:32px 24px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ─── NAV ─── -->
+<nav id="navbar">
+  <div class="nav-logo" onclick="navigate('home')">ODONATA</div>
+  <div class="nav-toggle" onclick="toggleMobileNav()">
+    <span></span><span></span><span></span>
+  </div>
+  <div class="nav-links" id="navLinks">
+    <a href="#" onclick="navigate('news')" data-page="news">NEWS</a>
+    <div class="nav-item">
+      <a href="#" onclick="navigate('bio-danse')" data-page="bio-danse">DANSE</a>
+      <div class="nav-dropdown">
+        <a href="#" onclick="navigate('bio-danse')">BIO</a>
+        <a href="#" onclick="navigate('cours')">COURS TRIBAL FUSION</a>
+        <a href="#" onclick="navigate('photo-danse')">PHOTO</a>
+        <a href="#" onclick="navigate('video-danse')">VIDEO</a>
+      </div>
+    </div>
+    <div class="nav-item">
+      <a href="#" onclick="navigate('bio-art')" data-page="bio-art">ART NUMÉRIQUE</a>
+      <div class="nav-dropdown">
+        <a href="#" onclick="navigate('bio-art')">BIO</a>
+        <a href="#" onclick="navigate('photo-art')">PHOTO</a>
+        <a href="#" onclick="navigate('video-art')">VIDEO</a>
+      </div>
+    </div>
+    <a href="#" onclick="navigate('design')" data-page="design">DESIGN</a>
+    <a href="#" onclick="navigate('contact')" data-page="contact">CONTACT</a>
+  </div>
+</nav>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- PAGE: HOME -->
+<!-- ════════════════════════════════════════════ -->
+<section id="page-home" class="page active">
+  <div class="home-content">
+    <h1 class="home-title">ODONATA</h1>
+    <p class="home-subtitle">Danse &middot; Art Numérique &middot; Design &middot; Genève</p>
+    <div class="home-divider"></div>
+    <div class="home-cards">
+      <div class="home-card" onclick="navigate('bio-danse')">
+        <div class="home-card-icon">◈</div>
+        <h3>Danse</h3>
+        <p>Tribal Fusion · Burlesque · Chorégraphie</p>
+      </div>
+      <div class="home-card" onclick="navigate('bio-art')">
+        <div class="home-card-icon">◇</div>
+        <h3>Art Numérique</h3>
+        <p>VJing · Mapping · Installations Interactives</p>
+      </div>
+      <div class="home-card" onclick="navigate('design')">
+        <div class="home-card-icon">◆</div>
+        <h3>Design</h3>
+        <p>Identité visuelle · Graphisme · Web Design</p>
+      </div>
+    </div>
+    <div class="home-social">
+      <a href="https://www.facebook.com/odonata.ch" target="_blank">Facebook</a>
+      <a href="https://vimeo.com/odonatadulac" target="_blank">Vimeo</a>
+      <a href="https://www.instagram.com/odonatadulac/" target="_blank">Instagram</a>
+    </div>
+  </div>
+  <div class="home-location">Genève, Suisse</div>
+</section>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- PAGE: NEWS -->
+<!-- ════════════════════════════════════════════ -->
+<section id="page-news" class="page">
+  <div class="page-hero">
+    <h1>NEWS</h1>
+    <div class="page-hero-line"></div>
+  </div>
+  <div class="page-body">
+    <div class="news-grid" id="newsGrid"></div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- PAGE: BIO DANSE -->
+<!-- ════════════════════════════════════════════ -->
+<section id="page-bio-danse" class="page">
+  <div class="page-hero">
+    <h1>BIO — Danse</h1>
+    <div class="page-hero-line"></div>
+  </div>
+  <div class="page-body">
+    <p class="bio-intro">
+      Odonata est une performeuse et artiste multidisciplinaire et multiculturelle d'origine turque et suédoise, basée à Genève. Elle est entre autre danseuse et chorégraphe de Tribal Fusion et Burlesque, ainsi que professeur de Tribal Fusion.
+    </p>
+
+    <div class="bio-section">
+      <h3>Formation</h3>
+      <p>Elle s'initie à la danse très tôt avec des cours de ballet dès l'âge de 4 ans, puis à la danse Modern Jazz à partir de 1996. Elle découvre la danse Orientale en 2002, la danse Bollywood en 2007, la danse Tribal Fusion en 2010 et le Burlesque en 2012. Parallèlement elle acquière des bases de yoga et pratique des sports tels que la natation, le ski et le jogging.</p>
+      <br>
+      <p>Elle a reçu l'enseignement intensif des meilleurs professeurs de danse Tribal Fusion actuels : Mardi Love, Rachel Brice, Zoe Jakes, Samantha Emmanuel, Sharon Kihara, Carolena Nericcio, Jill Parker, Ariellah, Heather Stants, Lady Fred, Elizabeth Strong.</p>
+    </div>
+
+    <div class="bio-section">
+      <h3>Diplômes</h3>
+      <ul>
+        <li>2011–2012 : Formation intensive de Tribal Fusion niveau 2, école Taksim de Berne (TTCC II) — 200h</li>
+        <li>2012 : Certificat « ATS Teacher Training » de Carolena Nericcio</li>
+        <li>2019 : Krysalis, Invocation Certificate, by Kami Liddle</li>
+        <li>2020 : Krysalis, Online, Conception, by Kami Liddle</li>
+        <li>2020 : DanceCraft, Key of Diamonds Certificate (level 1), by Zoe Jakes</li>
+        <li>2021 : DanceCraft, Key of Spades Certificate (level 2), by Zoe Jakes</li>
+      </ul>
+    </div>
+
+    <div class="bio-section">
+      <h3>Troupes</h3>
+      <ul>
+        <li>2007–2010 « Ametis » – Troupe de danse Orientale</li>
+        <li>2009–2011 « Naina » – Troupe de Bollywood</li>
+        <li>2012–2015 « <a href="https://www.facebook.com/cie.carthage/" target="_blank">Carthage</a> » – Troupe de Tribal Fusion</li>
+        <li>2015–2016 « <a href="https://vimeo.com/158855022" target="_blank">The Tribal Collective</a> » – Collectif international</li>
+        <li>2015–2021 « <a href="https://www.facebook.com/lesnaiadesdulac/" target="_blank">Les Naïades du Lac</a> » – Élèves d'Odonata</li>
+        <li>2015–2021 « <a href="https://www.facebook.com/La-Fée-Verte-599326603540901/" target="_blank">La Fée Verte</a> » – Collectif suisse ATS & Tribal Fusion</li>
+        <li>2016–2021 « <a href="https://www.facebook.com/lescopinesdedmond/" target="_blank">Les Copines d'Edmond</a> » – Troupe de Burlesque</li>
+      </ul>
+    </div>
+
+    <div class="bio-section">
+      <h3>Spectacles</h3>
+      <p>Elle s'est produite sur divers scènes : Festival Tribal Umrah (France & Espagne), Festival Tribal Bash (Allemagne), PALP Festival, Festival des 5 Continents, Fête de la Musique, Festival Electrocircus, Paléo Festival de Nyon, et dans le cadre de workshops du Festival Blackmovie et du Mapping Festival. Elle a aussi performs lors de soirées corporates à Istanbul et Bodrum, un mariage indien à Mumbai, le Bal de la Croix-Rouge (Arena Genève), Geneva Children in Need Charity Ball (Mandarin Oriental), soirée privée de Chanel et bien d'autres.</p>
+    </div>
+
+    <div class="bio-section">
+      <h3>Tribal Fusion</h3>
+      <p>Le Tribal Fusion est une fusion contemporaine de la danse orientale avec d'autres styles — danse indienne, flamenco, hip hop, danse contemporaine. Le terme « Tribal » fait référence à l'idée de tribu : c'est un milieu très communautaire et solidaire. Odonata voit le Tribal Fusion comme une évolution contemporaine de styles de danses ethniques et populaires, une nouvelle forme d'expression libre où chacun peut développer sa propre identité de manière créative et artistique.</p>
+    </div>
+
+    <div class="bio-section">
+      <h3>Burlesque</h3>
+      <p>Odonata s'intéresse au burlesque principalement pour ses aspects artistiques et féministes. C'est un espace d'expression libre qui casse les tabous et permet à chacun de déconstruire, de sublimer ou de tourner en dérision divers aspects lié au clivage des genres. Une forme d'art subversive qui englobe la danse, le théâtre, le mime, le cirque, le chant, les arts plastiques.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- PAGE: COURS -->
+<!-- ════════════════════════════════════════════ -->
+<section id="page-cours" class="page">
+  <div class="page-hero">
+    <h1>COURS</h1>
+    <div class="page-hero-line"></div>
+  </div>
+  <div class="page-body">
+    <div class="cours-info">
+      <h3>École des Naïades</h3>
+      <p>Cours de danse Orientale Tribal Fusion 2022–2023</p>
+    </div>
+
+    <div class="cours-grid">
+      <div class="cours-card">
+        <div class="cours-day">Mercredi</div>
+        <div class="cours-time">18h30 – 19h30</div>
+        <div class="cours-level">Niveau Moyen</div>
+        <p>Lieu : A Fleur de Peau<br><br>
+        <strong style="color:var(--text)">Prérequis :</strong> Un an de danse Tribal Fusion, ou plusieurs années de danse orientale. Avoir de la facilité avec la danse.</p>
+      </div>
+      <div class="cours-card">
+        <div class="cours-day">Mercredi</div>
+        <div class="cours-time">19h30 – 20h30</div>
+        <div class="cours-level">Niveau Débutant</div>
+        <p>Lieu : A Fleur de Peau<br><br>
+        <strong style="color:var(--text)">Prérequis :</strong> Être à l'aise avec la danse.</p>
+      </div>
+    </div>
+
+    <div class="cours-info">
+      <h3>Contenu des cours</h3>
+      <p>Échauffement, posture, technique, drills, combos, chorégraphie, sagates, conseils pour créer son costume, improvisation. Possibilité de participer à un spectacle à la fin de l'année.</p>
+    </div>
+
+    <div class="cours-info">
+      <h3>Tenue conseillée</h3>
+      <p>Pantalon comfortable + Petit haut + foulard autour des hanches (sans sequins). L'essentiel est de se sentir à l'aise !</p>
+    </div>
+
+    <div class="cours-info">
+      <h3>Tarifs</h3>
+      <div class="prix-grid">
+        <div class="prix-item">
+          <div class="prix-val">CHF 25</div>
+          <div class="prix-label">Cours d'essai</div>
+        </div>
+        <div class="prix-item">
+          <div class="prix-val">CHF 22</div>
+          <div class="prix-label">Tarif normal / cours</div>
+        </div>
+        <div class="prix-item">
+          <div class="prix-val">CHF 20</div>
+          <div class="prix-label">Tarif réduit / cours</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cours-info">
+      <h3>Lieu</h3>
+      <div class="lieu-box">
+        <div class="lieu-info">
+          <h4>A Fleur de Peau</h4>
+          <p>Rue du Fort-Barreau 13<br>1201 Genève<br>
+          Quartier Gare de Genève<br><br>
+          <a href="http://www.afleurdepeau-geneve.ch" target="_blank">www.afleurdepeau-geneve.ch</a></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="cours-info">
+      <h3>Inscription</h3>
+      <p>Pour vous inscrire, contactez simplement Odonata par email ou par téléphone pour plus d'informations.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- PAGE: BIO ART NUMÉRIQUE -->
+<!-- ════════════════════════════════════════════ -->
+<section id="page-bio-art" class="page">
+  <div class="page-hero">
+    <h1>BIO — Art Numérique</h1>
+    <div class="page-hero-line"></div>
+  </div>
+  <div class="page-body">
+    <p class="bio-intro">
+      Odonata est une artiste numérique et performeuse multidisciplinaire basée à Genève. Parmi ses activités : le VJing, le Mapping, la performance audiovisuelle et la création d'installations interactives.
+    </p>
+
+    <div class="bio-section">
+      <h3>Formation & Parcours</h3>
+      <p>Elle découvre la projection vidéo dès son plus jeune âge. À chacun de ses anniversaires un film super8 est projeté et elle est fascinée par la magie de la vidéo projetée. En 1982, un voyage à Disneyland la marque avec l'EPCOT Center : projection à 360°.</p>
+      <br>
+      <p>Elle fait une Maturité artistique puis se rend à Londres pour étudier à la Saint Martin's School (1998). Elle commence en Foundation in Art & Design, puis démarre un Bachelor en Art & Design en 1999, en se spécialisant en Media Design. La découverte du VJing en 2002 grâce à un workshop de Oli Sorenson à l'ICA sera une révélation.</p>
+      <br>
+      <p>En 2003, de retour à Genève, elle se produit en solo sous le nom « Lillith ». En 2009, elle collabore avec le musicien électronique dprojekt pour une performance live au festival Electron. Elle développe ensuite ses connaissances du Mapping (Madmapper) et s'intéresse particulièrement aux techniques d'interactivité entre lumière et corps humain et à la création de contenu génératif.</p>
+    </div>
+
+    <div class="bio-section">
+      <h3>Programmes & Technologies</h3>
+      <ul>
+        <li>VDMX</li>
+        <li>Madmapper</li>
+        <li>Modul8</li>
+        <li>Kinect</li>
+        <li>Adobe Premiere & After Effects</li>
+        <li>Quartz Composer</li>
+        <li>Vezér</li>
+      </ul>
+    </div>
+
+    <div class="bio-section">
+      <h3>Approche artistique</h3>
+      <p>Odonata approche l'art numérique comme de la danse ou de la peinture éphémère. Elle crée des tableaux virtuels en mouvement. Pour elle, le VJing est l'art de mouvoir des images dans une création improvisée ou chorégraphiée dont le rythme est dicté par la musique. Son esthétisme est granuleux et brute, souvent poétique et féminin. Elle tente de sublimer la banalité d'une image quotidienne et faire jaillir de la poésie là où on ne l'avait pas vue. La lumière, la nature, les mathématiques et le corps sont ses principales sources d'inspiration.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- PAGE: DESIGN -->
+<!-- ════════════════════════════════════════════ -->
+<section id="page-design" class="page">
+  <div class="page-hero">
+    <h1>DESIGN</h1>
+    <div class="page-hero-line"></div>
+  </div>
+  <div class="page-body">
+    <p class="design-intro">
+      Odonata travaille en tant que graphiste, vidéaste et web designer depuis plus de 13 ans. Son expérience du milieu de la danse lui permet de cibler parfaitement les besoins des danseurs et leurs univers esthétiques particuliers. Elle crée sur mesure et avec beaucoup de soin du détail.
+      <br><br>
+      Pour voir le reste de son travail artistique, visitez : <a href="http://dustandwater.com" target="_blank" style="color:var(--accent);text-decoration:none;">www.dustandwater.com</a>
+    </p>
+
+    <h3 style="font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:400;letter-spacing:3px;text-transform:uppercase;color:var(--accent);margin-bottom:20px;padding-bottom:8px;border-bottom:1px solid var(--border);">Portfolio — Danse</h3>
+    <div class="design-portfolio" id="designPortfolio"></div>
+
+    <h3 style="font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:400;letter-spacing:3px;text-transform:uppercase;color:var(--accent);margin-bottom:20px;padding-bottom:8px;border-bottom:1px solid var(--border);">Services</h3>
+    <div class="design-services">
+      <div class="service-card"><h4>Identité Visuelle</h4><p>Création de logo et identité visuelle sur mesure.</p></div>
+      <div class="service-card"><h4>Graphisme</h4><p>Création de flyer, poster, carte de visite, bannière. Pour l'impression ou internet.</p></div>
+      <div class="service-card"><h4>Web Design</h4><p>Création de site web, ligne graphique, développement, mise en place.</p></div>
+      <div class="service-card"><h4>Documentation Vidéo</h4><p>Prise de vue et montage de spectacles de danses.</p></div>
+      <div class="service-card"><h4>Scénographie Numérique</h4><p>Projection vidéo, Mapping, scénographie numérique pour spectacle de danse.</p></div>
+      <div class="service-card"><h4>Photographie</h4><p>Prise de vue en studio ou de spectacles. Retouche photo et photomontage.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- PAGE: PHOTO DANSE -->
+<!-- ════════════════════════════════════════════ -->
+<section id="page-photo-danse" class="page">
+  <div class="page-hero">
+    <h1>PHOTO — Danse</h1>
+    <div class="page-hero-line"></div>
+  </div>
+  <div class="page-body">
+    <div class="photo-grid">
+      <div class="photo-placeholder-box"><span>◈</span></div>
+      <div class="photo-placeholder-box"><span>◈</span></div>
+      <div class="photo-placeholder-box"><span>◈</span></div>
+      <div class="photo-placeholder-box"><span>◈</span></div>
+      <div class="photo-placeholder-box"><span>◈</span></div>
+      <div class="photo-placeholder-box"><span>◈</span></div>
+    </div>
+    <p style="font-size:12px;color:var(--text-dim);margin-top:32px;text-align:center;">Photos à remplacer par vos propres images.</p>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- PAGE: VIDEO DANSE -->
+<!-- ════════════════════════════════════════════ -->
+<section id="page-video-danse" class="page">
+  <div class="page-hero">
+    <h1>VIDEO — Danse</h1>
+    <div class="page-hero-line"></div>
+  </div>
+  <div class="page-body">
+    <div class="video-placeholder">
+      <p>Vos vidéos de danse apparaîtront ici.<br>Vous pouvez intégrer des lien Vimeo ou YouTube.<br><br>
+      <a href="https://vimeo.com/odonatadulac" target="_blank">Voir la page Vimeo →</a></p>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- PAGE: PHOTO ART -->
+<!-- ════════════════════════════════════════════ -->
+<section id="page-photo-art" class="page">
+  <div class="page-hero">
+    <h1>PHOTO — Art Numérique</h1>
+    <div class="page-hero-line"></div>
+  </div>
+  <div class="page-body">
+    <div class="photo-grid">
+      <div class="photo-placeholder-box"><span>◇</span></div>
+      <div class="photo-placeholder-box"><span>◇</span></div>
+      <div class="photo-placeholder-box"><span>◇</span></div>
+      <div class="photo-placeholder-box"><span>◇</span></div>
+      <div class="photo-placeholder-box"><span>◇</span></div>
+      <div class="photo-placeholder-box"><span>◇</span></div>
+    </div>
+    <p style="font-size:12px;color:var(--text-dim);margin-top:32px;text-align:center;">Photos à remplacer par vos propres images.</p>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- PAGE: VIDEO ART -->
+<!-- ════════════════════════════════════════════ -->
+<section id="page-video-art" class="page">
+  <div class="page-hero">
+    <h1>VIDEO — Art Numérique</h1>
+    <div class="page-hero-line"></div>
+  </div>
+  <div class="page-body">
+    <div class="video-placeholder">
+      <p>Vos vidéos d'art numérique apparaîtront ici.<br>Vous pouvez intégrer des liens Vimeo ou YouTube.<br><br>
+      <a href="https://vimeo.com/odonatadulac" target="_blank">Voir la page Vimeo →</a></p>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- PAGE: CONTACT -->
+<!-- ════════════════════════════════════════════ -->
+<section id="page-contact" class="page">
+  <div class="page-hero" style="justify-content:center;align-items:center;text-align:center;">
+    <div>
+      <h1>CONTACT</h1>
+      <div class="page-hero-line" style="position:relative;left:auto;bottom:auto;width:40px;height:1px;margin:16px auto 0;"></div>
+    </div>
+  </div>
+  <div class="page-body">
+    <div class="contact-content">
+      <div class="contact-label">Email</div>
+      <div class="contact-value"><a href="mailto:odonata@gmail.com">odonata@gmail.com</a></div>
+      <div class="contact-divider"></div>
+      <div class="contact-label">Téléphone</div>
+      <div class="contact-value">+41 (0)22 XXX XX XX</div>
+      <div class="contact-divider"></div>
+      <div class="contact-label">Basée à</div>
+      <div class="contact-value">Genève, Suisse</div>
+      <div class="contact-social">
+        <a href="https://www.facebook.com/odonata.ch" target="_blank">Facebook</a>
+        <a href="https://vimeo.com/odonatadulac" target="_blank">Vimeo</a>
+        <a href="https://www.instagram.com/odonatadulac/" target="_blank">Instagram</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── FOOTER ─── -->
+<footer>
+  <div class="footer-logo">ODONATA</div>
+  <p>© 2024 Odonata — Danse · Art Numérique · Design — Genève</p>
+</footer>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- SCRIPT -->
+<!-- ════════════════════════════════════════════ -->
+<script>
+// ─── DATA ───
+const newsData = [
+  { date:"5 octobre 2018", title:"Festival Ainsi Soit'L 2018", desc:"Spectacle des Copines d'Edmond avec Odonata" },
+  { date:"28 septembre 2018", title:"Urban Fusion Show", desc:"Spectacle Tribal et Urban Fusion. Odonata dansera 1 solo ainsi qu'avec La Fée Verte et avec Obsedian." },
+  { date:"11 août 2018", title:"Festival Tribal Umrah – Gala Show", desc:"Gala, Spectacle Tribal Fusion à Nice. Odonata dansera avec Mardi Love et 25 danseuses." },
+  { date:"7 août 2018", title:"Festival Tribal Umrah 2018 – Hafla", desc:"Hafla, Tribal Fusion à Nice. Odonata dansera 1 solo." },
+  { date:"6 août 2018", title:"Festival Tribal Umrah 2018 – Open Show", desc:"Open Show, Tribal Fusion à Nice. La Fée Verte dansera 2 chorées." },
+  { date:"27 avril 2018", title:"Art' Cane Makoaba 2018", desc:"Spectacle Tribal Fusion avec La Fée Verte." },
+  { date:"13 avril 2018", title:"The Underground Art Club Spring 2018", desc:"Cabaret de dessin – Odonata solo Tribal Fusion." },
+  { date:"24 novembre 2017", title:"The Underground Art Club 2017", desc:"Cabaret de dessin – Odonata solo Tribal Fusion." },
+  { date:"30 septembre 2017", title:"Geneva Hafla 2017", desc:"Solo Tribal Fusion par Odonata." },
+  { date:"16–17 septembre 2017", title:"VJing – Mantra Tribe System", desc:"La Noce de Cristal. VJing par Odonata." },
+  { date:"19–20 août 2017", title:"Stage d'été 2017", desc:"Stage d'été Tribal Fusion d'Odonata." },
+  { date:"29 juillet 2017", title:"Tribal Garden", desc:"Spectacle Tribal Fusion, solo Odonata et ses élèves Les Naïades." },
+  { date:"17 juin 2017", title:"Osmose / Filastine & Nova", desc:"Spectacle Osmose, Live Visuals par Odonata, Live set Filastine." },
+  { date:"3 juin 2017", title:"Tribal Factory Circus 2017", desc:"Spectacle Tribal Fusion, VJing par Odonata." },
+  { date:"28–29 avril 2017", title:"La Vrai Vie des Copines", desc:"Spectacle burlesque – Solo Odonata." },
+  { date:"15 avril 2017", title:"Indian Food Festival 2017", desc:"Live Set Arure avec VJing par Odonata." },
+  { date:"7 avril 2017", title:"Mantra Tribe System – ACT 2", desc:"Soirée Goa, VJing par Odonata." },
+  { date:"Février – Juin 2017", title:"Osmose Tribal Fusion & Audiovisual Lab", desc:"Atelier Tribal Fusion et Audiovisuel par Samantha Emanuel et Odonata." },
+  { date:"10 décembre 2016", title:"Tribal Moonlight 2016", desc:"Spectacle Tribal Fusion – Odonata solo." },
+  { date:"2 décembre 2016", title:"The Underground Art Club 2016", desc:"Cabaret et dessin – Odonata solo Tribal Fusion." },
+  { date:"1er décembre 2016", title:"Les Copines Escaladent les Fêtes", desc:"Spectacle burlesque – Odonata présentera un solo et un duo avec Paulette Mulot." },
+  { date:"6 octobre 2016", title:"Le Cabaret des Copines 2016", desc:"Spectacle burlesque – Odonata présentera un solo Tribal Fusion." },
+  { date:"30 septembre 2016", title:"VJing au Parc Bertrand", desc:"VJing par Odonata." },
+  { date:"27 août 2016", title:"Festival Tribal Umrah 2016 – Gala Show", desc:"Soirée de Gala Tribal Fusion. Odonata dansera une chorée de groupe avec Rachel Brice." },
+  { date:"23 août 2016", title:"Festival Tribal Umrah 2016 – Hafla on the Beach", desc:"Hafla on the Beach Tribal Fusion, à Viareggio. Odonata dansera un solo." },
+  { date:"9 juillet 2016", title:"Spectacle Tribal Fusion au Parc Bertrand", desc:"Spectacle de Tribal Fusion par Odonata." },
+  { date:"2 juillet 2016", title:"Indian Fusion Sparkles", desc:"Spectacle Indian Fusion. VJing par Odonata." },
+  { date:"21 mai 2016", title:"Roots and Wings", desc:"Spectacle Tribal Fusion — Odonata et ses élèves Les Naïades." },
+  { date:"15–16 avril 2016", title:"Les Copines d'Edmond", desc:"Spectacle burlesque. Odonata présentera 2 numéros." },
+  { date:"12 décembre 2015", title:"Festival Tribal Bash 2015", desc:"Spectacle Tribal Fusion. Odonata dansera avec le Tribal Collective." },
+];
+
+const designPortfolio = [
+  { caption:"Tribal Collective – Flyer – 12 décembre 2015" },
+  { caption:"La Fée Verte – Animation d'été au Square Rieu, Genève – 15 août 2015" },
+  { caption:"La Fée Verte – Logo – 2015" },
+  { caption:"Odonata – Cours – 2015–2016" },
+  { caption:"La Fée Verte – Flyer – 15 août 2015" },
+  { caption:"Odonata – Stage – 22–23 août 2015" },
+  { caption:"Univers esthétique Odonata – Photo originale – Pin-up School Show, 2013" },
+  { caption:"Tribalicious – Poster – 13 septembre 2015" },
+  { caption:"Cabaret Lune Noire – Poster – 29 mai 2014" },
+  { caption:"Cabaret Lune Noire – Poster – 21 mars 2014" },
+  { caption:"Cie Carthage – Logo" },
+  { caption:"Water Lilies – Flyer – 07 Février 2015" },
+  { caption:"Cie Carthage – Collage photo – 2014" },
+  { caption:"Cie Carthage – Flyer – Cours 2014–2015" },
+  { caption:"Cie Carthage – Flyer – Cours 2013–2014" },
+  { caption:"Cie Carthage – Flyer recto/verso – 2 novembre 2012" },
+  { caption:"Taksim Bellydance Night – Poster – 17 juin 2011" },
+];
+
+// ─── RENDER NEWS ───
+function renderNews() {
+  const grid = document.getElementById('newsGrid');
+  grid.innerHTML = newsData.map(n => `
+    <div class="news-card">
+      <div class="news-card-img"><span class="placeholder-icon">◈</span></div>
+      <div class="news-card-body">
+        <div class="news-card-date">${n.date}</div>
+        <div class="news-card-title">${n.title}</div>
+        <div class="news-card-desc">${n.desc}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ─── RENDER DESIGN PORTFOLIO ───
+function renderDesign() {
+  const grid = document.getElementById('designPortfolio');
+  grid.innerHTML = designPortfolio.map(d => `
+    <div class="design-item">
+      <div class="design-item-img"><span class="placeholder-icon">◆</span></div>
+      <div class="design-item-caption">${d.caption}</div>
+    </div>
+  `).join('');
+}
+
+// ─── NAVIGATION ───
+function navigate(page) {
+  event?.preventDefault();
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const target = document.getElementById('page-' + page);
+  if (target) {
+    target.classList.add('active');
+    window.scrollTo({ top:0, behavior:'smooth' });
+  }
+  // close mobile nav
+  document.getElementById('navLinks').classList.remove('open');
+}
+
+function toggleMobileNav() {
+  document.getElementById('navLinks').classList.toggle('open');
+}
+
+// ─── NAV SCROLL EFFECT ───
+window.addEventListener('scroll', () => {
+  document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 30);
+});
+
+// ─── INIT ───
+renderNews();
+renderDesign();
+</script>
+</body>
+</html>
